@@ -33,32 +33,15 @@
 
 	ahb {
 		apb {
-			mmc0: mmc@f0000000 {
-				pinctrl-0 = <&pinctrl_mmc0_clk_cmd_dat0 &pinctrl_mmc0_dat1_3 &pinctrl_mmc0_dat4_7 &pinctrl_mmc0_cd>;
-				vmmc-supply = <&vcc_mmc0_reg>;
-				vqmmc-supply = <&vcc_3v3_reg>;
-				status = "okay";
-				slot@0 {
-					reg = <0>;
-					bus-width = <8>;
-					cd-gpios = <&pioE 0 GPIO_ACTIVE_LOW>;
-				};
-			};
-
-			mmc1: mmc@f8000000 {
-				vmmc-supply = <&vcc_3v3_reg>;
-				vqmmc-supply = <&vcc_3v3_reg>;
-				status = "disabled";
-				slot@0 {
-					reg = <0>;
-					bus-width = <4>;
-					cd-gpios = <&pioE 1 GPIO_ACTIVE_LOW>;
-				};
-			};
 
 			spi0: spi@f0004000 {
-				cs-gpios = <&pioD 13 0>, <0>, <0>, <&pioD 16 0>;
+				cs-gpios = <&pioD 13 0>, <0>, <0>, <0>;
 				status = "okay";
+ 				spidev@0x00 {         
+       					 compatible = "enlogic,oled";
+       					 spi-max-frequency = <20000000>;
+        				 reg = <0>;
+    					};
 			};
 
 			can0: can@f000c000 {
@@ -71,7 +54,15 @@
 			};
 
 			i2c1: i2c@f0018000 {
+				clock-frequency = <400000>;
 				status = "okay";
+				eeprom@50
+				{
+					compatible = "atmel,24c1024";
+					pagesize = <256>;
+					reg = <0x50>;
+				};
+
 
 				pmic: act8865@5b {
 					compatible = "active-semi,act8865";
@@ -134,6 +125,7 @@
 			};
 
 			usart0: serial@f001c000 {
+				pinctrl-0 = <&pinctrl_usart0 &pinctrl_usart0_rts_cts>;
 				status = "okay";
 			};
 
@@ -143,21 +135,6 @@
 			};
 
 			uart0: serial@f0024000 {
-				status = "okay";
-			};
-
-			mmc1: mmc@f8000000 {
-				pinctrl-0 = <&pinctrl_mmc1_clk_cmd_dat0 &pinctrl_mmc1_dat1_3 &pinctrl_mmc1_cd>;
-				status = "okay";
-				slot@0 {
-					reg = <0>;
-					bus-width = <4>;
-					cd-gpios = <&pioE 1 GPIO_ACTIVE_HIGH>;
-				};
-			};
-
-			spi1: spi@f8008000 {
-				cs-gpios = <&pioC 25 0>;
 				status = "okay";
 			};
 
@@ -211,22 +188,6 @@
 							<AT91_PIOA 18 AT91_PERIPH_B AT91_PINCTRL_PULL_UP>,
 							<AT91_PIOA 19 AT91_PERIPH_B AT91_PINCTRL_PULL_UP>;
 					};
-
-					pinctrl_key_gpio: key_gpio_0 {
-						atmel,pins =
-							<AT91_PIOE 29 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP_DEGLITCH>;
-					};
-
-					pinctrl_mmc0_cd: mmc0_cd {
-						atmel,pins =
-							<AT91_PIOE 0 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP_DEGLITCH>;
-					};
-
-					pinctrl_mmc1_cd: mmc1_cd {
-						atmel,pins =
-							<AT91_PIOE 1 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP_DEGLITCH>;
-					};
-
 					pinctrl_usba_vbus: usba_vbus {
 						atmel,pins =
 							<AT91_PIOE 9 AT91_PERIPH_GPIO AT91_PINCTRL_DEGLITCH>;	/* PE9, conflicts with A9 */
@@ -283,40 +244,36 @@
 		};
 
 		usb1: ohci@00600000 {
-			num-ports = <3>;
-			atmel,vbus-gpio = <0
-					   &pioE 3 GPIO_ACTIVE_LOW
-					   &pioE 4 GPIO_ACTIVE_LOW
-					  >;
+			atmel,vbus-gpio = <&pioE 3 GPIO_ACTIVE_LOW>;
 			status = "okay";
 		};
 
 		usb2: ehci@00700000 {
 			status = "okay";
 		};
+
 	};
 
-	vcc_mmc0_reg: fixedregulator_mmc0 {
-		compatible = "regulator-fixed";
-		gpio = <&pioE 2 GPIO_ACTIVE_LOW>;
-		regulator-name = "mmc0-card-supply";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-always-on;
-	};
 
 	gpio_keys {
-		compatible = "gpio-keys";
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_key_gpio>;
-
-		bp3 {
-			label = "PB_USER";
-			gpios = <&pioE 29 GPIO_ACTIVE_LOW>;
+			compatible = "gpio-keys";
+			autorepeat;
+		select{
+			label = "Select";
+			gpios = <&pioE 11 GPIO_ACTIVE_LOW>;
 			linux,code = <0x104>;
-			wakeup-source;
 		};
+		scroll {
+			label = "Scroll";				
+			gpios = <&pioE 6 GPIO_ACTIVE_LOW>;
+			linux,code = <0x108>;
+		};
+		menu{
+			label = "Menu";				
+			gpios = <&pioE 7 GPIO_ACTIVE_LOW>;
+			linux,code = <0x103>;
+		};
+
 	};
 
 	leds {
